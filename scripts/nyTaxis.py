@@ -27,9 +27,6 @@ def doDateTime(dt_raw,debug=False):
            
 def main():
 
-
-    
-    
     ### Get data-bases
     print ("\n ***************************")
     print ("\n **** getting Data Bases ***")
@@ -41,15 +38,15 @@ def main():
     
     if (args.verbose): print ("main: doing adjustment to minutes")
     train_df['trip_duration_mins'] = train_df.apply( lambda row: (row['trip_duration']*0.016666), axis=1)
-    if (args.verbose): print ("main: doing adjustment to passenger count")
-    train_df['passenger_count_laurie'] = train_df.apply( lambda row: (1 if (row['passenger_count']==0) else "5+" if row['passenger_count']>=5 else row['passenger_count'] ), axis=1)
-    if (args.verbose): print ("main: doing adjustment to dateTime")
+    #if (args.verbose): print ("main: doing adjustment to passenger count")
+    #train_df['passenger_count_laurie'] = train_df.apply( lambda row: (1 if (row['passenger_count']==0) else "5+" if row['passenger_count']>=5 else row['passenger_count'] ), axis=1)
+    #if (args.verbose): print ("main: doing adjustment to dateTime")
     
     
-    train_df['initHour']  = train_df.apply( lambda row: int(doDateTime(row['pickup_datetime'])[0]), axis=1)
-    train_df['initTime']  = train_df.apply( lambda row: doDateTime(row['pickup_datetime'])[0], axis=1)
-    train_df['initDay']   = train_df.apply( lambda row: doDateTime(row['pickup_datetime'])[1], axis=1)
-    train_df['initMonth'] = train_df.apply( lambda row: doDateTime(row['pickup_datetime'])[2], axis=1)
+    #train_df['initHour']  = train_df.apply( lambda row: int(doDateTime(row['pickup_datetime'])[0]), axis=1)
+    #train_df['initTime']  = train_df.apply( lambda row: doDateTime(row['pickup_datetime'])[0], axis=1)
+    #train_df['initDay']   = train_df.apply( lambda row: doDateTime(row['pickup_datetime'])[1], axis=1)
+    #train_df['initMonth'] = train_df.apply( lambda row: doDateTime(row['pickup_datetime'])[2], axis=1)
 
    
     printDF(train_df)
@@ -64,15 +61,15 @@ def main():
 
     train_plotter=plotUtils.PandaPlotter(train_df,"trip_duration_mins")
 
-    train_plotter.plotTarget() 
+    #train_plotter.plotTarget() 
     
-    plotCols=[["passenger_count_laurie",[1,2,3,4,'5+']],['initHour'], ['initDay'], ['initMonth'] ]
-    for col in plotCols:
-        if (args.verbose): print (" main: doPlotSmall for ",col[0])
-        try:    train_plotter.doPlotSmall(col[0],order=col[1])
-        except: train_plotter.doPlotSmall(col[0])
+    #plotCols=[["passenger_count_laurie",[1,2,3,4,'5+']],['initHour'], ['initDay'], ['initMonth'] ]
+    #for col in plotCols:
+    #    if (args.verbose): print (" main: doObjectPlot for ",col[0])
+    #    try:    train_plotter.doObjectPlot(col[0],order=col[1])
+    #    except: train_plotter.doObjectPlot(col[0])
               
-    
+    train_plotter.doHeatmapPlot("pickup_longitude","pickup_latitude")
     
 if __name__ == "__main__":
 
