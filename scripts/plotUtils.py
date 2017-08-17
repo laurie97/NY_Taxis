@@ -127,15 +127,24 @@ class PandaPlotter(object):
 
         self.df[xCat+"_bin"]=pd.cut(self.df[xCat], xBins)
         self.df[yCat+"_bin"]=pd.cut(self.df[yCat], yBins)
-    
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10), sharey=True)
+
+        pivoted = self.df.pivot_table(index=yCat+"_bin", columns=xCat+"_bin", values=self.target, aggfunc=np.sum)
+        sns_hm = sns.heatmap(pivoted, robust=True, xticklabels=10, yticklabels=10, ax=ax1)
+        sns_hm.invert_yaxis()
+        
         pivoted = self.df.pivot_table(index=yCat+"_bin", columns=xCat+"_bin", values=self.target, aggfunc=np.mean)
-        #pivoted = self.df.pivot_table(index=yCat, columns=xCat, values=self.target, aggfunc=np.mean)
-        sns_hm  = sns.heatmap(pivoted)
+        sns.heatmap(pivoted, robust=True, xticklabels=10, yticklabels=10, ax=ax2)
+
+        ax1.invert_yaxis()
         plotName="plots/output_heatmap_"+xCat+"_"+yCat+".pdf"
-        plt.savefig(plotName)
+        fig.savefig(plotName)
+        print (" doHeatmapPlot: Printed heat map to",plotName)
 
         sns.jointplot(x=xCat, y=yCat, data=self.df, kind="hex",xlim=(-74.05,-73.9),ylim=(40.65, 40.85));
         plotName="plots/output_jointplot_"+xCat+"_"+yCat+".pdf"
         plt.savefig(plotName)
+        print (" doHeatmapPlot: Printed joint plot to",plotName)
 
-        print(" doHeatmapPlot: DEBUG, done second plot")
+        
