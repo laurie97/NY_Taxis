@@ -11,6 +11,7 @@ sns.set_style('whitegrid')
 
 import pandas as pd
 import numpy as np
+import os, errno
 ###%matplotlib inline
 
 def linePlot(dataFrame, category, plotName, hue=None):
@@ -24,17 +25,31 @@ def linePlot(dataFrame, category, plotName, hue=None):
     facet.set(yscale="log")
     facet.savefig(plotName.replace(".","_logy."))
     
+
+def mkdir_p(path):
+
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+        
 class PandaPlotter(object):
     
-    def __init__(self, dataFrame, targetCategory):
+    def __init__(self, dataFrame, targetCategory, plotDir="plots"):
         self.df      = dataFrame
-        self.target = targetCategory
+        self.target  = targetCategory
+        self.plotDir = plotDir
+        mkdir_p(self.plotDir)
 
+        
     def plotTarget(self):
 
         print (" plotTarget: Plotting", self.target)
         ## Line plot of overall distribution
-        plotName="plots/target_"+self.target+".pdf"
+        plotName="target_"+self.target+".pdf"
         #linePlot(self.df, self.target, plotName)
         #print (" plotTarget: Printed to: ", plotName)
 
@@ -56,8 +71,8 @@ class PandaPlotter(object):
         ax3.set_yscale('log')
         ax3.set_xscale('log')
         
-        fig.savefig(plotName)
-        print (" output to", plotName)
+        fig.savefig(self.plotDir+"/"+plotName)
+        print (" output to", self.plotDir+"/"+plotName)
 
                         
     def doObjectPlot(self, category, order=None):
@@ -92,59 +107,71 @@ class PandaPlotter(object):
         sns.boxplot(x=category, y=self.target, data=self.df,ax=ax2, order=order)
         ax2.set(ylim=(0,40) )
         
-        plotName="plots/output_"+category+".pdf"
-        fig.savefig(plotName)
-        print (" output to", plotName)
+        plotName="output_"+category+".pdf"
+        fig.savefig(self.plotDir+"/"+plotName)
+        print (" output to", self.plotDir+"/"+plotName)
         return
         
         facet = sns.FacetGrid(self.df, hue=self.target, aspect=4)
         facet.map(sns.kdeplot,category,shade=True)
         facet.set(xlim=(0,120), yscale="log")
         facet.add_legend()
-        plotName="plots/output_facet"+category+".pdf"
-        fig.savefig(plotName)
+        plotName="output_facet"+category+".pdf"
+        fig.savefig(self.plotDir+"/"+plotName)
 
-    def doHeatmapPlot(self, xCat, yCat):
-        
-        if xCat not in list(self.df): return
-        if yCat not in list(self.df): return
+    def doHeatmapPlot(self, xCat, yCat, dataF=None, plotAppend=""):
+
+ 
+     
 
         print ("\n**********************")
         print (" doHeatmapPlot: Running!")
         print (" doHeatmapPlot: xCat", xCat)
         print (" doHeatmapPlot: yCat", yCat)
         print (" doHeatmapPlot: target", self.target)
+
+        print (" doHeatmapPlot: DEBUG type is ",type(dataF).__name__)
+        if type(dataF).__name__!=type(self.df).__name__ :
+            dataF=self.df
+            print (" doHeatmapPlot: DEBUG not dataFrame so use self.df")
+        else:
+            print (" doHeatmapPlot: DEBUG not dataFrame is already in there so use it")
+            
+        if xCat not in list(dataF): return
+        if yCat not in list(dataF): return
         
-        
-        #pivoted = self.df.pivot(index=yCat, columns=xCat, values=self.target)
+        #pivoted = dataF.pivot(index=yCat, columns=xCat, values=self.target)
         #sns.heatmap(pivoted,ax=ax1)
 
         sns.set_style("white")
       
-        xBins   = np.linspace(-74.05,-73.9, 100)
-        yBins   = np.linspace(40.65,  40.85, 100)
-        #groups  = self.df.groupby([pd.cut(self.df[xCat], xBins),pd.cut(self.df[yCat], yBins)])[self.target].mean()
+        xBins   = np.linspace(-74.05,-73.9, 50)
+        yBins   = np.linspace(40.65,  40.85, 50)
+        #groups  = dataF.groupby([pd.cut(dataF[xCat], xBins),pd.cut(dataF[yCat], yBins)])[self.target].mean()
 
-        self.df[xCat+"_bin"]=pd.cut(self.df[xCat], xBins)
-        self.df[yCat+"_bin"]=pd.cut(self.df[yCat], yBins)
+        dataF[xCat+"_bin"]=pd.cut(dataF[xCat], xBins)
+        dataF[yCat+"_bin"]=pd.cut(dataF[yCat], yBins)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10), sharey=True)
 
-        pivoted = self.df.pivot_table(index=yCat+"_bin", columns=xCat+"_bin", values=self.target, aggfunc=np.sum)
+        pivoted = dataF.pivot_table(index=yCat+"_bin", columns=xCat+"_bin", values=self.target, aggfunc=np.sum)
         sns_hm = sns.heatmap(pivoted, robust=True, xticklabels=10, yticklabels=10, ax=ax1)
         sns_hm.invert_yaxis()
         
-        pivoted = self.df.pivot_table(index=yCat+"_bin", columns=xCat+"_bin", values=self.target, aggfunc=np.mean)
+        pivoted = dataF.pivot_table(index=yCat+"_bin", columns=xCat+"_bin", values=self.target, aggfunc=np.mean)
         sns.heatmap(pivoted, robust=True, xticklabels=10, yticklabels=10, ax=ax2)
 
         ax1.invert_yaxis()
-        plotName="plots/output_heatmap_"+xCat+"_"+yCat+".pdf"
-        fig.savefig(plotName)
-        print (" doHeatmapPlot: Printed heat map to",plotName)
+        plotName="output_heatmap_"+xCat+"_"+yCat+plotAppend+".pdf"
+        fig.savefig(self.plotDir+"/"+plotName)
+        print (" doHeatmapPlot: Printed heat map to",self.plotDir+"/"+plotName)
 
-        sns.jointplot(x=xCat, y=yCat, data=self.df, kind="hex",xlim=(-74.05,-73.9),ylim=(40.65, 40.85));
-        plotName="plots/output_jointplot_"+xCat+"_"+yCat+".pdf"
-        plt.savefig(plotName)
-        print (" doHeatmapPlot: Printed joint plot to",plotName)
+        #sns.jointplot(x=xCat, y=yCat, data=dataF, kind="hex",xlim=(-74.05,-73.9),ylim=(40.65, 40.85));
+        #plotName="output_jointplot_"+xCat+"_"+yCat+".pdf"
+        #plt.savefig(plotName)
+        #print (" doHeatmapPlot: Printed joint plot to",plotName)
 
         
+    def doHMByCutOnVar(self, cutVar,cut1,cut2,xVar="pickup_longitude",yVar="pickup_latitude"):     
+        cut_df=self.df[ (self.df[cutVar]>=cut1) & (self.df[cutVar]<cut2)]
+        self.doHeatmapPlot(xVar,yVar,dataF=cut_df,plotAppend="_"+str(cut1)+"_"+str(cut2))

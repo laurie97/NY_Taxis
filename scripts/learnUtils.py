@@ -11,11 +11,8 @@ import numpy as np
 
 # machine learning
 print ("   Import sciki-learn...")
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC, LinearSVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 
@@ -38,7 +35,40 @@ def printDF(dataF):
     print (" *** end of prinDF\n")
 
 
-def prepTrainSet(dataFrame,toTrainFor,cuts=False):
+def prepTrainSet(dataFrame,target,inVars):
+
+    print ("\n*****************************")
+    print (  "***** Prep training set *****")
+    print (  "*****************************")
+    
+    X_df = dataFrame.copy()
+
+    ### Check all the invars you asked for are there
+    for inVar in inVars:
+        if inVar not in list(dataFrame):
+            print ("  ERROR learnUtils:prepTrainSet: variable",inVar,"does not exist")
+            return
+        
+    ### If target
+    if target in list(dataFrame): 
+        X_df = X_df.drop(target, axis=1)    
+        Y_df = dataFrame[target]
+    else:
+        Y_df = False
+
+    print ("     What are the in Vars")
+    for var in list(X_df):
+        if var not in inVars:
+            #print ("   learnUtils:prepTrainSet: - drop",var)
+            X_df = X_df.drop(var,axis=1)
+        else:
+            print ("   learnUtils:prepTrainSet: + keep",var)   
+    
+    if target in list(dataFrame):  return (X_df, Y_df)
+    else:     return  X_df
+
+
+def prepTrainSetCuts(dataFrame,toTrainFor,cuts=False):
 
     print ("\n*****************")
     print ("Prep training set")
@@ -59,24 +89,20 @@ def prepTrainSet(dataFrame,toTrainFor,cuts=False):
         return X_df
 
     
-def doML(X_train_raw, Y_train_raw, type):
+def doML(X_train, Y_train, type):
 
-    if type=="logreq":
-        print ("Doing logistic regression")
-        machineLearner = LogisticRegression()
-        
-    elif type=="randomForest":
-        print ("Doing random forest")
-        machineLearner = RandomForestClassifier(n_estimators=100)
-        
+    if "mlp":
+        machineLearner = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 1), random_state=1)
+    
     else:
         print("No machine learner option")
         return
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X_train_raw, Y_train_raw, test_size=0.4,random_state=3)
+    ## Notation to emphasise that we are splitting up what is called train in the main code
+    X_train_train, X_train_test, Y_train_train, Y_train_test = train_test_split(X_train, Y_train, test_size=0.4,random_state=3)
     
-    machineLearner.fit(X_train, Y_train)
-    machineLearner.score(X_train, Y_train)
-    print (" doML: ", machineLearner.score(X_test, Y_test))
+    machineLearner.fit(X_train_train, Y_train_train)
+    machineLearner.score(X_train_train, Y_train_train)
+    print (" doML: ", machineLearner.score(X_train_test, Y_train_test))
     
 
